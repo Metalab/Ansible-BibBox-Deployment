@@ -21,10 +21,12 @@
     name:
       - build-essential
 
-- name: Install newest Rust
+- name: Install newest Rust # TODO Fix Pipefail
   ansible.builtin.shell: |
     set -e -o pipefail
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  args:
+    executable: /bin/bash
   changed_when: false
 
 - name: Remove dependencies that are no longer required
@@ -39,7 +41,7 @@
 #     line: "WaylandEnable=false" # TODO Reboot box afterwards
 #   #notify: "reboot"
 
-# TODO - Set up autostart of noVNC
+# TODO - Set up autostart of noVNC https://github.com/c3wien/privacyweek-ansible/blob/main/roles/video/hdmi-desktop/files/novnc.service.j2
 # /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5900 --listen 6080
 # /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5901 --listen 6081
 
