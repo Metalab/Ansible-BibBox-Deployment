@@ -1,0 +1,3 @@
+Host BibBox
+  Hostname <BOX_IP>
+  IdentityFile <path to your SSH key>

@@ -1,0 +1,22 @@
+---
+
+# - name: SSH disable password auth
+#   ansible.builtin.lineinfile:
+#     dest: "/etc/ssh/sshd_config"
+#     regexp: "^PasswordAuthentication"
+#     line: "PasswordAuthentication no"
+#   notify: "restart sshd"
+
+- name: Install base packages
+  ansible.builtin.apt:
+    update_cache: true
+    state: present
+    name: [less, sudo, vim-nox, bwm-ng, dnsutils, psmisc, whois, mtr-tiny,
+           iputils-tracepath, bash-completion, tmux, debsums, net-tools,
+           apt-transport-https, moreutils, curl, git-core, fortune,
+           cowsay, gnupg2, man, ufw]
+
+- name: Update all packages to their latest version
+  ansible.builtin.apt:
+    name: "*"
+    state: latest # noqa package-latest we want the latest packages

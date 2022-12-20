@@ -1,0 +1,33 @@
+---
+- name: Install zsh
+  ansible.builtin.apt:
+    state: present
+    name: zsh
+
+- name: Cloning oh-my-zsh # noqa latest[git] - we want to get the latest version for OMZ
+  ansible.builtin.git:
+    repo: https://github.com/ohmyzsh/ohmyzsh
+    dest: ~/.oh-my-zsh
+  become: false
+
+- name: Creating ~/.zshrc
+  ansible.builtin.template:
+    src: files/zshrc
+    dest: ~/.zshrc
+    mode: u=rw,g=r
+  become: false
+
+- name: Register ZSH path variable
+  ansible.builtin.command: "which zsh"
+  register: zsh_path
+  changed_when: false
+
+- name: Enabling zsh
+  ansible.builtin.shell: "chsh $SUDO_USER -s $(which zsh)"
+  changed_when: false
+
+- name: Setting MOTD
+  ansible.builtin.template:
+    src: files/motd
+    dest: /etc/update-motd.d/20-custom
+    mode: u=rwx,g=rx,o=rx

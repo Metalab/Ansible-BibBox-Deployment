@@ -1,0 +1,31 @@
+---
+
+- name: Playbook Readme
+  hosts: bibBox
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Display play usage information
+      ansible.builtin.debug:
+        msg:
+          - " This playbook installs and configures  the video setup for the Library PC"
+          - "                                                                                      "
+          - "     The following tags are available:                                                "
+          - "                                                                                      "
+          - "   * deploy  - deploy the library box setup                         "
+          - "         you must specify at least one of them with -t <tag>                          "
+      delegate_to: localhost
+    - name: End play
+      ansible.builtin.meta: end_play
+
+- name: Deploy BibBox
+  hosts: bibBox
+  tags:
+    - never
+    - deploy
+  become: true
+  roles:
+    # - role: update_authorized_keys
+    - role: system-base
+    - role: ohmyzsh
+    - role: bib-setup

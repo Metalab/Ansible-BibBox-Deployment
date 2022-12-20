@@ -1,0 +1,7 @@
+---
+- name: Update SSH keys on hosts
+  hosts: all
+  gather_facts: false
+  become: true
+  roles:
+    - role: update_authorized_keys

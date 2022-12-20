@@ -1,0 +1,60 @@
+---
+
+- name: Add OBS APT repository from PPA and install its signing key on Ubuntu target
+  ansible.builtin.apt_repository:
+    repo: ppa:obsproject/obs-studio
+
+- name: Install OBS, noVNC and Gnome Remote Desktop Packages
+  ansible.builtin.apt:
+    update_cache: true
+    state: present
+    name:
+      - ffmpeg
+      - obs-studio
+      - novnc
+      - gnome-remote-desktop
+
+- name: Install additional packages
+  ansible.builtin.apt:
+    update_cache: true
+    state: present
+    name:
+      - build-essential
+
+- name: Install newest Rust
+  ansible.builtin.shell: |
+    set -e -o pipefail
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  changed_when: false
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: true
+
+# We use Gnome-Desktop-Sharing directly
+# - name: Force X11 Login on the System
+#   ansible.builtin.lineinfile:
+#     dest: "/etc/gdm3/custom.conf"
+#     regexp: "^#WaylandEnable=false"
+#     line: "WaylandEnable=false" # TODO Reboot box afterwards
+#   #notify: "reboot"
+
+# TODO - Set up autostart of noVNC
+# /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5900 --listen 6080
+# /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5901 --listen 6081
+
+- name: Enable VNC in the Gnome Settings
+  become: false
+  ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc enable true" # noqa command-instead-of-shell
+  changed_when: false
+
+- name: Enable VNC Interaction in the Gnome Settings
+  become: false
+  ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc view-only false" # noqa command-instead-of-shell
+  changed_when: false
+
+# eventuell: via  shell as normal user:
+# grdctl vnc enable
+# grdctl vnc disable-view-only
+
+# TODO Fix password or automatically allow access without PW

@@ -1,0 +1,6 @@
+# all ssh keys
+ssh_keys:
+  XYZ: "ssh-ed25519 TODO_TODO_TODO_TODO_TODO_TODO_TODO_TODO_TODO_TODO_TODO"
+# ssh users, this might be overridden in host/group vars
+ssh_users:
+  - XYZ
