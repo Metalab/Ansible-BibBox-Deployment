@@ -8,7 +8,7 @@
     - name: Display play usage information
       ansible.builtin.debug:
         msg:
-          - " This playbook installs and configures  the video setup for the Library PC"
+          - " This playbook installs and configures Remote Access and Software for the Library PC  "
           - "                                                                                      "
           - "     The following tags are available:                                                "
           - "                                                                                      "
