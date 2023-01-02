@@ -1,0 +1,23 @@
+<user-mapping>
+        
+    <!-- Per-user authentication and config information -->
+
+    <!-- A user using md5 to hash the password
+         guacadmin user and its md5 hashed password below is used to 
+             login to Guacamole Web UI-->
+    <authorize 
+            username="metalab"
+            password="e4980c9e9df8f70527a18f2dad2585e4"
+            encoding="md5">
+
+        <connection name="Libremote">
+            <protocol>rdp</protocol>
+            <param name="hostname">127.0.0.1</param>
+            <param name="port">3389</param>
+            <param name="username">metalab</param>
+            <param name="ignore-cert">true</param>
+        </connection>
+
+    </authorize>
+
+</user-mapping>

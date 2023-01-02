@@ -4,24 +4,27 @@
   ansible.builtin.apt_repository:
     repo: ppa:obsproject/obs-studio
 
-- name: Install OBS, noVNC and Gnome Remote Desktop Packages
+- name: Install OBS and other useful Packages
   ansible.builtin.apt:
     update_cache: true
     state: present
     name:
       - ffmpeg
       - obs-studio
-      - novnc
-      - gnome-remote-desktop
+      - vlc
 
-- name: Install additional packages
+- name: Install packages for guacamole setup
   ansible.builtin.apt:
     update_cache: true
     state: present
-    name:
-      - build-essential
+    name: [
+      build-essential, libssh2-1-dev, freerdp2-dev, libwebsockets-dev, libwebp-dev,
+      libvorbis-dev, libpulse-dev, libswscale-dev, automake, libtool-bin, autoconf,
+      libpng-dev, libjpeg-dev, libcairo2-dev, libavcodec-dev, libpango1.0-dev, libavformat-dev, # guacamole-server dependencies
+      openjdk-11-jdk, tomcat9, tomcat9-admin, tomcat9-common, tomcat9-user # tomcat for the guacamole client hosting
+    ]
 
-- name: Install newest Rust # TODO Fix Pipefail
+- name: Install newest Rust
   ansible.builtin.shell: |
     set -e -o pipefail
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -32,6 +35,13 @@
 - name: Remove dependencies that are no longer required
   ansible.builtin.apt:
     autoremove: true
+
+# - name: Install NoVNC Package
+#   ansible.builtin.apt:
+#     update_cache: true
+#     state: present
+#     name:
+#       - novnc
 
 # We use Gnome-Desktop-Sharing directly
 # - name: Force X11 Login on the System
@@ -45,18 +55,207 @@
 # /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5900 --listen 6080
 # /usr/share/novnc/utils/launch.sh --vnc 127.0.0.1:5901 --listen 6081
 
-- name: Enable VNC in the Gnome Settings
-  become: false
-  ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc enable true" # noqa command-instead-of-shell
-  changed_when: false
+# - name: Enable VNC in the Gnome Settings
+#   become: false
+#   ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc enable true" # noqa command-instead-of-shell
+#   changed_when: false
 
-- name: Enable VNC Interaction in the Gnome Settings
-  become: false
-  ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc view-only false" # noqa command-instead-of-shell
-  changed_when: false
+# - name: Enable VNC Interaction in the Gnome Settings
+#   become: false
+#   ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc view-only false" # noqa command-instead-of-shell
+#   changed_when: false
 
-# eventuell: via  shell as normal user:
+# eventuell: via shell as normal user:
 # grdctl vnc enable
 # grdctl vnc disable-view-only
 
-# TODO Fix password or automatically allow access without PW
+- name: Disable the possibilty in the GUI to lock the screen
+  become: false
+  ansible.builtin.command:
+    cmd: 'gsettings set org.gnome.desktop.lockdown disable-lock-screen true'
+  changed_when: false
+
+- name: Disable the screensaver locking
+  become: false
+  ansible.builtin.command:
+    cmd: 'gsettings set org.gnome.desktop.screensaver lock-enabled false'
+  changed_when: false
+
+- name: Create directory for the Gnome-Remote-Desktop Credentials
+  become: false
+  ansible.builtin.file:
+    path: '~/.local/share/gnome-remote-desktop/'
+    state: directory
+    mode: '0775'
+
+# Create Keys for the Gnome-Remote-Desktop Service; Reference: https://gitlab.gnome.org/-/snippets/1778
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA) for remote-desktop
+  become: false
+  community.crypto.openssl_privatekey:
+    path: ~/.local/share/gnome-remote-desktop/rdp-tls.key
+
+- name: Generate an OpenSSL Certificate Signing Request for LibRemote
+  become: false
+  community.crypto.openssl_csr:
+    path: ~/.local/share/gnome-remote-desktop/rdp-tls.csr
+    privatekey_path: ~/.local/share/gnome-remote-desktop/rdp-tls.key
+    common_name: LibRemote
+
+- name: Generate a Self Signed OpenSSL certificate for Gnome Remote Desktop
+  become: false
+  community.crypto.x509_certificate:
+    path: ~/.local/share/gnome-remote-desktop/rdp-tls.crt
+    privatekey_path: ~/.local/share/gnome-remote-desktop/rdp-tls.key
+    csr_path: ~/.local/share/gnome-remote-desktop/rdp-tls.csr
+    provider: selfsigned
+
+- name: Set the TLS Certifcate
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl rdp set-tls-cert ~/.local/share/gnome-remote-desktop/rdp-tls.crt'
+  changed_when: false
+
+- name: Set the TLS Certifcate Key
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl rdp set-tls-key ~/.local/share/gnome-remote-desktop/rdp-tls.key'
+  changed_when: false
+
+# CLI Tool for gnome-remote-Desktop; Reference: https://www.mankier.com/1/grdctl
+- name: Enable RDP for the user
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl rdp enable'
+  changed_when: false
+
+- name: Enable interaction for RDP
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl rdp disable-view-only'
+  changed_when: false
+
+- name: Set the credentials for the RDP Login
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl rdp set-credentials metalab metalab' # TODO: define a config file for that
+  changed_when: false
+
+# Gnome-Remote-Desktop Service; Reference: https://ask.fedoraproject.org/t/enable-gnome-screen-sharing-via-commandline/6837/2
+- name: Start and enable gnome-remote-desktop for the user
+  become: false
+  ansible.builtin.systemd:
+    name: gnome-remote-desktop
+    state: started
+    scope: user
+    enabled: true
+
+- name: Clone the guacamole repo
+  ansible.builtin.git: # noqa latest[git] we want currently to pull latest, until 1.5 is released
+    repo: https://github.com/apache/guacamole-server.git
+    dest: ~/guacamole-server
+    # version: "1.5" # awating release - now direct pull from master
+  register: output
+  failed_when: 'output.changed == "false" and "Local modifications exist in the destination" not in output.msg'
+
+- name: Copy the guacamole patch onto the host
+  ansible.builtin.copy:
+    src: 'files/guacamole.patch'
+    dest: '~/guacamole.patch'
+    mode: u=rw,g=r
+
+# patch here, see https://www.reddit.com/r/selfhosted/comments/y5gnk0/comment/j09itw7/?utm_source=reddit&utm_medium=web2x&context=3
+- name: Apply guacamole patch
+  ansible.builtin.command:
+    cmd: 'git apply ~/guacamole.patch' # noqa command-instead-of-module we want apply a git patch
+    chdir: ~/guacamole-server
+  register: output
+  changed_when: false
+  failed_when: 'output.rc != 0 and "patch does not apply" not in output.stderr'
+
+- name: Run autoreconf for compiling
+  ansible.builtin.command:
+    cmd: 'autoreconf -i'
+    chdir: ~/guacamole-server
+  changed_when: false
+
+- name: Make guacamole
+  ansible.builtin.shell: # noqa command-instead-of-shell we want to compile guacamole
+    cmd: 'export CFLAGS=-Wno-error; ./configure --with-systemd-dir=/etc/systemd/system/; make -j5'
+    chdir: '~/guacamole-server'
+  changed_when: false
+
+- name: Install guacamole
+  ansible.builtin.command:
+    cmd: 'make install'
+    chdir: ~/guacamole-server
+  changed_when: false
+
+- name: Update the system cache of installed libraries
+  ansible.builtin.command:
+    cmd: 'ldconfig'
+  changed_when: false
+
+# create user guacd here, see https://kifarunix.com/install-guacamole-on-debian-11/#fix-rdp-security-negotiation-failed
+- name: Create user guacd for guacamole
+  ansible.builtin.user:
+    name: 'guacd'
+    home: '/var/lib/guacd/'
+    system: true
+    shell: '/usr/sbin/nologin'
+    comment: 'System user for guacd'
+
+- name: Fix systemd Config File for Guacamole by replacing string 'daemon' with 'guacd'
+  ansible.builtin.replace:
+    path: '/etc/systemd/system/guacd.service'
+    regexp: 'daemon'
+    replace: 'guacd'
+
+- name: Create guacamole directories if it does not exist
+  ansible.builtin.file:
+    path: '/etc/guacamole/{{ item }}'
+    state: directory
+    mode: '0755'
+  with_items:
+    - extensions
+    - lib
+
+- name: Download the Guacamole client
+  ansible.builtin.get_url:
+    url: 'https://downloads.apache.org/guacamole/1.4.0/binary/guacamole-1.4.0.war'
+    dest: '/etc/guacamole/guacamole.war'
+    mode: '0440'
+
+- name: Create a symbolic link to the tomcat webapp directory
+  ansible.builtin.file:
+    src: '/etc/guacamole/guacamole.war'
+    dest: '/var/lib/tomcat9/webapps/guacamole.war'
+    owner: 'tomcat'
+    group: 'tomcat'
+    state: link
+
+- name: Add GUACAMOLE_HOME to the tomcat config
+  ansible.builtin.lineinfile:
+    path: '/etc/default/tomcat9'
+    line: 'GUACAMOLE_HOME=/etc/guacamole'
+
+- name: Copy the guacamole user-mapping.xml onto the host
+  ansible.builtin.copy:
+    src: 'etc/guacamole/guacamole.properties'
+    dest: '/etc/guacamole/guacamole.properties'
+    mode: u=rw,g=r
+
+- name: Copy the guacamole user-mapping.xml onto the host
+  ansible.builtin.copy:
+    src: 'etc/guacamole/user-mapping.xml'
+    dest: '/etc/guacamole/user-mapping.xml'
+    mode: u=rw,g=r
+
+- name: (Re)Start and enable guacamole and tomcat service
+  ansible.builtin.systemd:
+    state: restarted
+    name: '{{ item }}'
+    enabled: true
+    daemon_reload: true
+  with_items:
+    - tomcat9
+    - guacd
