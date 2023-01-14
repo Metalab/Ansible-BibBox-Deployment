@@ -264,6 +264,22 @@
     dest: '/etc/guacamole/guacamole.properties'
     mode: u=rw,g=r
 
+- name: Copy the guacamole user-mapping.xml onto the host
+  ansible.builtin.copy:
+    src: 'etc/guacamole/user-mapping.xml'
+    dest: '/etc/guacamole/user-mapping.xml'
+    mode: u=rw,g=r
+
+- name: (Re)Start and enable guacamole and tomcat service
+  ansible.builtin.systemd:
+    state: restarted
+    name: '{{ item }}'
+    enabled: true
+    daemon_reload: true
+  with_items:
+    - tomcat9
+    - guacd
+
 - name: Move the Tomcat ROOT to an ROOT_OLD path
   ansible.builtin.command: mv /var/lib/tomcat9/webapps/ROOT /var/lib/tomcat9/webapps/ROOT_OLD
   args:
@@ -282,21 +298,12 @@
     regexp: '8080'
     replace: '80'
 
-- name: Copy the guacamole user-mapping.xml onto the host
-  ansible.builtin.copy:
-    src: 'etc/guacamole/user-mapping.xml'
-    dest: '/etc/guacamole/user-mapping.xml'
-    mode: u=rw,g=r
-
-- name: (Re)Start and enable guacamole and tomcat service
+- name: Restart the Tomcat for the applied changes
   ansible.builtin.systemd:
     state: restarted
-    name: '{{ item }}'
+    name: tomcat9
     enabled: true
     daemon_reload: true
-  with_items:
-    - tomcat9
-    - guacd
 
 # The HDMI Audio needs to be modfied to work.
 # If you use another device, this hack might not be needed
