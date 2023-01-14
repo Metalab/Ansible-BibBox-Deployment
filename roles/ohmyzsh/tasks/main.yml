@@ -2,7 +2,9 @@
 - name: Install zsh
   ansible.builtin.apt:
     state: present
-    name: zsh
+    name: 
+      - zsh
+      - fonts-powerline
 
 - name: Cloning oh-my-zsh # noqa latest[git] - we want to get the latest version for OMZ
   ansible.builtin.git:
