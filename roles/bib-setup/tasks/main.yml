@@ -65,10 +65,6 @@
 #   ansible.builtin.shell: "gsettings set org.gnome.desktop.remote-desktop.vnc view-only false" # noqa command-instead-of-shell
 #   changed_when: false
 
-# eventuell: via shell as normal user:
-# grdctl vnc enable
-# grdctl vnc disable-view-only
-
 - name: Disable the possibilty in the GUI to lock the screen
   become: false
   ansible.builtin.command:
@@ -137,7 +133,31 @@
 - name: Set the credentials for the RDP Login
   become: false
   ansible.builtin.command:
-    cmd: 'grdctl rdp set-credentials metalab metalab' # TODO: define a config file for that
+    cmd: 'grdctl rdp set-credentials metalab metalab' # TODO: define a config variable for credentials
+  changed_when: false
+
+- name: Enable VNC for the user
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl vnc enable'
+  changed_when: false
+
+- name: Enable interaction for VNC
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl vnc disable-view-only'
+  changed_when: false
+
+- name: Set Auth Method for VNC to password
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl vnc set-auth-method password'
+  changed_when: false
+
+- name: Set the credentials for the VNC Login
+  become: false
+  ansible.builtin.command:
+    cmd: 'grdctl vnc set-password metalab' # TODO: define a config variable for credentials
   changed_when: false
 
 # Gnome-Remote-Desktop Service; Reference: https://ask.fedoraproject.org/t/enable-gnome-screen-sharing-via-commandline/6837/2
@@ -244,6 +264,24 @@
     dest: '/etc/guacamole/guacamole.properties'
     mode: u=rw,g=r
 
+- name: Move the Tomcat ROOT to an ROOT_OLD path
+  ansible.builtin.command: mv /var/lib/tomcat9/webapps/ROOT /var/lib/tomcat9/webapps/ROOT_OLD
+  args:
+    removes: /var/lib/tomcat9/webapps/ROOT
+    creates: /var/lib/tomcat9/webapps/ROOT_OLD
+
+- name: Move the Guacamole to ROOT
+  ansible.builtin.command: mv /var/lib/tomcat9/webapps/guacamole /var/lib/tomcat9/webapps/ROOT
+  args:
+    removes: /var/lib/tomcat9/webapps/guacamole
+    creates: /var/lib/tomcat9/webapps/ROOT
+
+- name: Let the Tomcat listen to Port 80 instead of 8080
+  ansible.builtin.replace:
+    path: '/var/lib/tomcat9/conf/server.xml'
+    regexp: '8080'
+    replace: '80'
+
 - name: Copy the guacamole user-mapping.xml onto the host
   ansible.builtin.copy:
     src: 'etc/guacamole/user-mapping.xml'
@@ -259,3 +297,22 @@
   with_items:
     - tomcat9
     - guacd
+
+# The HDMI Audio needs to be modfied to work.
+# If you use another device, this hack might not be needed
+# Hack Reference: https://github.com/alsa-project/alsa-tools/blob/78e579b3e30076be9e69c410434621b205318dfb/hdajackretask/apply-changes.c#L258
+- name: Copy the hda-jack-retask.conf file onto the host
+  ansible.builtin.copy:
+    src: 'etc/modprobe.d/hda-jack-retask.conf'
+    dest: '/etc/modprobe.d/hda-jack-retask.conf'
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+
+- name: Copy the hda-jack-retask.fw onto the host
+  ansible.builtin.copy:
+    src: 'lib/firmware/hda-jack-retask.fw'
+    dest: '/lib/firmware/hda-jack-retask.fw'
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
