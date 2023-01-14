@@ -8,18 +8,20 @@ Also MD5 is used for the secrets in the config!
 
 **This is bad design and does not follow best practices - DO NOT USE THIS PROJECT IF YOU DON'T KNOW WHAT YOU ARE DOING! - Especially not in production systems of companies!** - **BUT:** In our case the guacamole client is publicy available on-site for all members and users and the credentials are no secrets. See: https://metalab.at/wiki/Libremote#Usage_Instructions  
 
-# Implementation TODOs
+# Possible Implementation TODOs
 
-Fix Audio via Ansible; see https://ubuntuforums.org/showthread.php?t=2459541  
 Kill Lockscreen via systemd-timer; see https://notes.zerodogg.org/GNOME/lock-unlock-cli/  
 `dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --print-reply --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false`
 # Project Info  
 
 This Ansible Playbook installs and configures on a fresh Ubuntu 22.04 Installation a webservice to access the Desktop via Webinterface.  
 
-It uses RDP of the Ubuntu built-in Gnome Resktop Desktop Feature. Apache Guacamole Server (https://github.com/apache/guacamole-server) proxies the RDP and the Guacamole Client that is locally served via Apache Tomcat provides the Webclient.
+It uses RDP of the Ubuntu built-in Gnome Remote Desktop Feature. Apache Guacamole Server (https://github.com/apache/guacamole-server) proxies the RDP and the Guacamole Client that is locally served via Apache Tomcat provides the Webclient.
 
 It is used in the Metalab for the Streaming and Presentation Setup in the Library. The Project Webpage is available under: https://metalab.at/wiki/Libremote  
+
+After deployment the guacamole client is available under Port 80.  
+So just visit <Hostname/IP> in your web browser and enjoy the remote session.
 
 Used Reference for the installation and configuration:  
 
@@ -30,8 +32,9 @@ Used Reference for the installation and configuration:
 
 # Prerequisites  
 
-1. Install a fresh Ubuntu 22.04 with auto login enabled
-2. Install and enable SSH Server
+1. Install a fresh Ubuntu 22.04 with auto-login enabled
+2. Install the `ssh` Package
+3. Create the gnome keychain with an empty password. (You should be prompted with a dialogue after first boot)
 
 # How To Deploy  
 
