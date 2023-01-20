@@ -9,11 +9,11 @@ Also MD5 is used for the secrets in the config!
 **This is bad design and does not follow best practices - DO NOT USE THIS PROJECT IF YOU DON'T KNOW WHAT YOU ARE DOING! - Especially not in production systems of companies!** - **BUT:** In our case the guacamole client is publicy available on-site for all members and users and the credentials are no secrets. See: https://metalab.at/wiki/LibRemote#Usage_Instructions  
 
 # (Implementation)TODOs  
-* Implement Wake on LAN (WoL)
 * Add the PC to the Shutdown procedure. maybe via SSH and sending the shutdown command?
 
 ## Done  
 * Add the shutdown command to sudoers file with NOPASSWD option for the metalab user, so triggering shutdown via guacamole does not prompt for a password
+* Implement Wake on LAN (WoL)
 
 ## Not feasible  
 * Lockscreen Option is deactivated by default: Implement Kill Lockscreen as Guacamole Shell Option; see https://notes.zerodogg.org/GNOME/lock-unlock-cli/  
