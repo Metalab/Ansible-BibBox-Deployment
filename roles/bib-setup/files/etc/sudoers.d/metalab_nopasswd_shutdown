@@ -1,0 +1,3 @@
+# Allows the metalab user to shutdown the system without a password; source: https://unix.stackexchange.com/a/465236
+# TODO - Replace user by variable
+metalab  ALL=NOPASSWD: /sbin/shutdown

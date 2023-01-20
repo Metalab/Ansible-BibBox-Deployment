@@ -12,6 +12,7 @@
       - ffmpeg
       - obs-studio
       - vlc
+      - ethtool # for Wake on LAN (WoL)
 
 - name: Install packages for guacamole setup
   ansible.builtin.apt:
@@ -323,3 +324,13 @@
     owner: root
     group: root
     mode: u=rw,g=r,o=r
+
+- name: Copy sudoers file to allow shutdown without PW
+  ansible.builtin.copy:
+    src: 'etc/sudoers.d/metalab_nopasswd_shutdown'
+    dest: '/etc/sudoers.d/metalab_nopasswd_shutdown'
+    backup: true
+    owner: root
+    group: root
+    mode: 0440
+    validate: /usr/sbin/visudo -cf %s
