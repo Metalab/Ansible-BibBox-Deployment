@@ -6,14 +6,18 @@ Look, I'm a readme!
 This setup is not secure by default and does not implement best practices (!). We ship default credentials with the config files for this Tomcat Setup and the RDP account. The username `metalab` and password `metalab` are hardcoded the config files.  
 Also MD5 is used for the secrets in the config!  
 
-**This is bad design and does not follow best practices - DO NOT USE THIS PROJECT IF YOU DON'T KNOW WHAT YOU ARE DOING! - Especially not in production systems of companies!** - **BUT:** In our case the guacamole client is publicy available on-site for all members and users and the credentials are no secrets. See: https://metalab.at/wiki/Libremote#Usage_Instructions  
+**This is bad design and does not follow best practices - DO NOT USE THIS PROJECT IF YOU DON'T KNOW WHAT YOU ARE DOING! - Especially not in production systems of companies!** - **BUT:** In our case the guacamole client is publicy available on-site for all members and users and the credentials are no secrets. See: https://metalab.at/wiki/LibRemote#Usage_Instructions  
 
 # (Implementation)TODOs  
-* Implement Wake on Lan (WoL)
-* Add the shutdown command to sudoers file with NOPASSWD option for the metalab user, so triggering shutdown via guacamole does not prompt for a password
-* Implement Kill Lockscreen as Guacamole Shell Option; see https://notes.zerodogg.org/GNOME/lock-unlock-cli/  
-`dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --print-reply --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false`
+* Implement Wake on LAN (WoL)
 * Add the PC to the Shutdown procedure. maybe via SSH and sending the shutdown command?
+
+## Done  
+* Add the shutdown command to sudoers file with NOPASSWD option for the metalab user, so triggering shutdown via guacamole does not prompt for a password
+
+## Not feasible  
+* Lockscreen Option is deactivated by default: Implement Kill Lockscreen as Guacamole Shell Option; see https://notes.zerodogg.org/GNOME/lock-unlock-cli/  
+`dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --print-reply --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false`
 
 # Project Info  
 
@@ -21,7 +25,7 @@ This Ansible Playbook installs and configures on a fresh Ubuntu 22.04 Installati
 
 It uses RDP of the Ubuntu built-in Gnome Remote Desktop Feature. Apache Guacamole Server (https://github.com/apache/guacamole-server) proxies the RDP and the Guacamole Client that is locally served via Apache Tomcat provides the Webclient.
 
-It is used in the Metalab for the Streaming and Presentation Setup in the Library. The Project Webpage is available under: https://metalab.at/wiki/Libremote  
+It is used in the Metalab for the Streaming and Presentation Setup in the Library. The Project Webpage is available under: https://metalab.at/wiki/LibRemote  
 
 After deployment the guacamole client is available under Port 80.  
 So just visit <Hostname/IP> in your web browser and enjoy the remote session.
