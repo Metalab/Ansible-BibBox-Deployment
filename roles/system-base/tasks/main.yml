@@ -12,7 +12,7 @@
     update_cache: true
     state: present
     name: [less, sudo, vim-nox, bwm-ng, dnsutils, psmisc, whois, mtr-tiny,
-           iputils-tracepath, bash-completion, tmux, debsums, net-tools,
+           iputils-tracepath, bash-completion, htop, tmux, debsums, net-tools,
            apt-transport-https, moreutils, curl, git-core, fortune,
            cowsay, gnupg2, man, ufw]
 
